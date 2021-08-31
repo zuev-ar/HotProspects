@@ -10,11 +10,9 @@ import CoreData
 import SamplePackage
 
 struct ContentView: View {
-    
     var prospects = Prospects()
     
     var body: some View {
-        
         TabView {
             ProspectsView(filter: .none)
                 .tabItem {
@@ -41,9 +39,7 @@ struct ContentView: View {
                 }
         }
         .environmentObject(prospects)
-        
     }
-    
 }
 
 struct ContentView_Previews: PreviewProvider {

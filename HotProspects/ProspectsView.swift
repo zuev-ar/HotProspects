@@ -13,9 +13,15 @@ enum FilterType {
     case none, contacted, uncontacted
 }
 
+enum SortType {
+    case none, name, email
+}
+
 struct ProspectsView: View {
     @EnvironmentObject var prospects: Prospects
     @State private var isShowingScaner = false
+    @State private var showingActionSheet = false
+    @State private var sort: SortType = .none
     
     let filter: FilterType
     
@@ -27,6 +33,17 @@ struct ProspectsView: View {
             return "Contacted people"
         case .uncontacted:
             return "Uncontacted people"
+        }
+    }
+    
+    var filteredProspects: [Prospect] {
+        switch filter {
+        case .none:
+            return sortArray(unsortedProspects: prospects.people)
+        case .contacted:
+            return sortArray(unsortedProspects: prospects.people.filter { $0.isContacted })
+        case .uncontacted:
+            return sortArray(unsortedProspects: prospects.people.filter { !$0.isContacted })
         }
     }
     
@@ -60,10 +77,22 @@ struct ProspectsView: View {
                             .foregroundColor(prospect.isContacted ? .blue : .black)
                             .padding([.trailing], 5)
                     }
+                    .actionSheet(isPresented: $showingActionSheet) {
+                        ActionSheet(title: Text("Sort list"), message: Text("Choose the way:"), buttons: [
+                                .default(Text("None"), action: { self.sort = .none }),
+                                .default(Text("Name"), action: { self.sort = .name }),
+                                .default(Text("Email"), action: { self.sort = .email })
+                            ])
+                    }
                 }
             }
             .navigationBarTitle(title)
-            .navigationBarItems(trailing: Button(action: {
+            .navigationBarItems(leading: Button(action: {
+                self.showingActionSheet = true
+            }, label: {
+                Image(systemName: "arrow.up.arrow.down.square")
+                Text("Sort")
+            }), trailing: Button(action: {
 //                let prospect = Prospect()
 //                prospect.name = "Paul Hudson"
 //                prospect.emailAddress = "paul@hackingwithswift.com"
@@ -74,19 +103,8 @@ struct ProspectsView: View {
                 Text("Scan")
             }))
             .sheet(isPresented: $isShowingScaner) {
-                CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson\npaul@hackingwithswift.com", completion: self.handleScan)
+                CodeScannerView(codeTypes: [.qr], simulatedData: "\(Int.random(in: 1..<100)). Paul Hudson\npaul\(Int.random(in: 1..<100))@hackingwithswift.com", completion: self.handleScan)
             }
-        }
-    }
-    
-    var filteredProspects: [Prospect] {
-        switch filter {
-        case .none:
-            return prospects.people
-        case .contacted:
-            return prospects.people.filter { $0.isContacted }
-        case .uncontacted:
-            return prospects.people.filter { !$0.isContacted }
         }
     }
     
@@ -107,6 +125,21 @@ struct ProspectsView: View {
             
         case .failure(let error):
             print(error.localizedDescription)
+        }
+    }
+    
+    private func sortArray(unsortedProspects: [Prospect]) -> [Prospect] {
+        switch sort {
+        case .none:
+            return unsortedProspects
+        case .name:
+            return unsortedProspects.sorted {
+                $0.name < $1.name
+            }
+        case .email:
+            return unsortedProspects.sorted {
+                $0.emailAddress < $1.emailAddress
+            }
         }
     }
     
